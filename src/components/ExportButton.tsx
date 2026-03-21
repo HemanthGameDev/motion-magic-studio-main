@@ -10,8 +10,11 @@ import {
 } from '@/lib/video-export';
 import type { PreparedExportStage } from '@/lib/export-stage';
 import { Progress } from '@/components/ui/progress';
+import { renderVideoOnServer } from '@/lib/server-render';
+import type { AnimationConfig } from '@/lib/types';
 
 interface Props {
+  config: AnimationConfig;
   prepareExportStage: () => Promise<PreparedExportStage>;
   width: number;
   height: number;
@@ -21,7 +24,7 @@ interface Props {
 }
 
 type ExportState = 'idle' | 'preparing' | 'recording' | 'processing' | 'done' | 'preview' | 'error';
-type UiExportMode = 'auto' | 'fast' | 'smart' | 'fallback';
+type UiExportMode = 'auto' | 'fast' | 'smart' | 'fallback' | 'server';
 
 const STATUS_TO_STATE: Record<ExportStatus, ExportState> = {
   preparing: 'preparing',
@@ -32,6 +35,7 @@ const STATUS_TO_STATE: Record<ExportStatus, ExportState> = {
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
 const ExportButton = ({
+  config,
   prepareExportStage,
   width,
   height,
@@ -60,6 +64,38 @@ const ExportButton = ({
     setRuntimeMode(null);
     setEstimatedSeconds(null);
   }, [videoUrl]);
+
+  const runServerExportAttempt = useCallback(async () => {
+    setState('preparing');
+    setProgress(0.1);
+    setEstimatedSeconds(null);
+    setRuntimeMode('server-mp4');
+
+    const result = await renderVideoOnServer({
+      config,
+      width,
+      height,
+      fps,
+    });
+
+    if (result.blob.size < 1000) {
+      throw new Error('Server render returned an empty video');
+    }
+
+    setState('processing');
+    setProgress(0.95);
+
+    const filename = `motion-${Date.now()}.mp4`;
+    const url = URL.createObjectURL(result.blob);
+    setVideoBlob(result.blob);
+    setVideoUrl(url);
+    setState('done');
+    setProgress(1);
+    await wait(250);
+    downloadBlob(result.blob, filename);
+    setState('preview');
+    retryCount.current = 0;
+  }, [config, width, height, fps]);
 
   const runExportAttempt = useCallback(async () => {
     setState('preparing');
@@ -128,6 +164,11 @@ const ExportButton = ({
         console.warn('Preview timeline wait failed, continuing with export-stage timeline fallback.', error);
       }
 
+      if (mode === 'server') {
+        await runServerExportAttempt();
+        return;
+      }
+
       while (true) {
         try {
           await runExportAttempt();
@@ -148,11 +189,12 @@ const ExportButton = ({
     } finally {
       onExportBusyChange?.(false);
     }
-  }, [cleanup, isAnimationReady, onExportBusyChange, runExportAttempt, waitForPreviewTimeline]);
+  }, [cleanup, isAnimationReady, mode, onExportBusyChange, runExportAttempt, runServerExportAttempt, waitForPreviewTimeline]);
 
   const handleDownload = () => {
     if (!videoBlob) return;
-    downloadBlob(videoBlob, `motion-${Date.now()}.webm`);
+    const extension = runtimeMode === 'server-mp4' ? 'mp4' : 'webm';
+    downloadBlob(videoBlob, `motion-${Date.now()}.${extension}`);
   };
 
   const handleDismiss = () => {
@@ -261,6 +303,7 @@ const ExportButton = ({
           <option value="fast">Fast</option>
           <option value="smart">Smart</option>
           <option value="fallback">Fallback</option>
+          <option value="server">Server MP4</option>
         </select>
 
         <select
@@ -293,10 +336,14 @@ const ExportButton = ({
         Export
       </button>
 
-      {!isAnimationReady && (
+      {!isAnimationReady && mode !== 'server' && (
         <span className="text-[10px] text-muted-foreground">Preparing animation...</span>
       )}
-      <span className="text-[10px] text-muted-foreground">Best performance in Chrome.</span>
+      {mode === 'server' ? (
+        <span className="text-[10px] text-muted-foreground">Server MP4 uses <span className="font-mono">npm run render:server</span> and FFmpeg on port 5050.</span>
+      ) : (
+        <span className="text-[10px] text-muted-foreground">Best performance in Chrome.</span>
+      )}
     </div>
   );
 };
