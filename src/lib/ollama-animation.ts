@@ -14,11 +14,14 @@ type AiTextReveal = 'stagger_blur' | 'stagger_rise' | 'clean_fade' | 'impact_pop
 type AiCamera = 'zoom_in' | 'drift_left' | 'float' | 'static';
 type AiBackgroundMood = 'dark_gradient' | 'warm_luxury' | 'neon_gradient' | 'grayscale';
 
-interface OllamaGenerateResponse {
+interface OllamaChatResponse {
+  message?: {
+    content?: string;
+  };
   response?: string;
 }
 
-const OLLAMA_ENDPOINT = 'http://localhost:11434/api/generate';
+const OLLAMA_ENDPOINT = 'http://localhost:11434/api/chat';
 const DEFAULT_MODEL = 'qwen3.5:9b';
 const VALID_TEMPLATES = new Set<AiTemplate>(['cinematic_intro', 'luxury', 'bold', 'minimal', 'modern_tech', 'product_showcase', 'kinetic_burst']);
 const VALID_MOTION_STYLES = new Set<AiMotionStyle>(['slow_dramatic', 'energetic', 'editorial_clean', 'tech_precision']);
@@ -218,18 +221,11 @@ function normalizeGeneratedConfig(raw: unknown): JsonInput {
 
 function buildPrompt(prompt: string): string {
   return [
-    'Convert user input into cinematic animation config.',
-    'Think like a motion designer and cinematic motion director.',
+    'Convert this into animation JSON:',
     '',
-    `Prompt: ${prompt}`,
+    prompt,
     '',
-    'Choose:',
-    '- mood',
-    '- motion style',
-    '- pacing',
-    '- camera movement',
-    '',
-    'Return ONLY minified JSON in this exact shape:',
+    'Return ONLY:',
     '{',
     '  "template": "cinematic_intro" | "luxury" | "bold" | "minimal" | "modern_tech" | "product_showcase" | "kinetic_burst",',
     '  "heading": "string",',
@@ -251,13 +247,6 @@ function buildPrompt(prompt: string): string {
     '    "outro": number',
     '  }',
     '}',
-    '',
-    'Rules:',
-    '- No markdown, no explanation, no extra keys.',
-    '- Favor cinematic consistency over randomness.',
-    '- luxury means warm gold with dark gradients.',
-    '- tech means blue or neon accents with precise motion.',
-    '- minimal means grayscale with restrained pacing.',
   ].join('\n');
 }
 
@@ -267,31 +256,56 @@ export async function generateAnimationConfig(prompt: string): Promise<JsonInput
     throw new Error('Prompt is required');
   }
 
-  const MODEL = getConfiguredModel();
-  console.log('Using model:', MODEL);
+  try {
+    const MODEL = getConfiguredModel();
+    console.log('Using model:', MODEL);
+    console.log('🚀 Sending prompt to AI:', trimmedPrompt);
 
-  const response = await fetch(OLLAMA_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      prompt: buildPrompt(trimmedPrompt),
-      stream: false,
-    }),
-  });
+    const response = await fetch(OLLAMA_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a motion graphics generator. Return only JSON.',
+          },
+          {
+            role: 'user',
+            content: buildPrompt(trimmedPrompt),
+          },
+        ],
+        stream: false,
+      }),
+    });
 
-  if (!response.ok) {
-    console.warn('AI failed, using fallback template');
-    throw new Error(`Ollama request failed with status ${response.status}`);
+    console.log('📡 Response status:', response.status);
+
+    if (!response.ok) {
+      console.warn('AI failed, using fallback template');
+      throw new Error(`Ollama request failed with status ${response.status}`);
+    }
+
+    const data = await response.json() as OllamaChatResponse;
+    console.log('🧠 Raw AI response:', data);
+
+    const output = data.message?.content || data.response;
+    console.log('📝 AI text output:', output);
+
+    if (typeof output !== 'string') {
+      throw new Error('Ollama did not return a generated response');
+    }
+
+    console.log('🔍 Parsing JSON...');
+    const parsed = JSON.parse(extractJsonObject(output)) as unknown;
+    const config = normalizeGeneratedConfig(parsed);
+    console.log('✅ Parsed config:', config);
+    return config;
+  } catch (error) {
+    console.error('❌ AI ERROR:', error);
+    throw error;
   }
-
-  const data = await response.json() as OllamaGenerateResponse;
-  if (typeof data.response !== 'string') {
-    throw new Error('Ollama did not return a generated response');
-  }
-
-  const parsed = JSON.parse(extractJsonObject(data.response)) as unknown;
-  return normalizeGeneratedConfig(parsed);
 }

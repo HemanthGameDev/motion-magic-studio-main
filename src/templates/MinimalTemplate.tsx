@@ -39,85 +39,95 @@ const MinimalTemplate = ({ config, isPlaying, onComplete, onTimelineReady }: Tem
     const image = imageRef.current;
     const headingWords = headingWordsRef.current.filter((node): node is HTMLSpanElement => Boolean(node));
 
-    if (!stage || !bg || !heading || !sub || !caption || !dot || !rule) {
-      console.warn('Missing GSAP target');
+    if (!gsap || !stage || !bg || !heading || !sub || !caption || !dot || !rule) {
+      console.warn('GSAP or element missing');
       onTimelineReady?.(null);
       return;
     }
 
-    if (tlRef.current) tlRef.current.kill();
-    const targets: gsap.TweenTarget[] = [heading, sub, caption, dot, rule];
-    if (image) targets.push(image);
-    gsap.set(targets, { opacity: 0 });
-    if (headingWords.length > 0) gsap.set(headingWords, { opacity: 0, y: 14, filter: media.blurTransitions ? 'blur(4px)' : 'none' });
-    gsap.set(stage, {
-      transformPerspective: motion.enable3D ? 800 : 0,
-      rotateX: motion.enable3D ? 2 : 0,
-      rotateY: motion.enable3D ? -2 : 0,
-    });
+    try {
+      if (tlRef.current) tlRef.current.kill();
+      const targets: gsap.TweenTarget[] = [heading, sub, caption, dot, rule];
+      if (image) targets.push(image);
+      gsap.set(targets, { opacity: 0 });
+      if (headingWords.length > 0) gsap.set(headingWords, { opacity: 0, y: 14, filter: media.blurTransitions ? 'blur(4px)' : 'none' });
+      gsap.set(stage, {
+        transformPerspective: motion.enable3D ? 800 : 0,
+        rotateX: motion.enable3D ? 2 : 0,
+        rotateY: motion.enable3D ? -2 : 0,
+      });
 
-    const tl = gsap.timeline({ paused: true, onComplete });
+      const tl = gsap.timeline({ paused: true, onComplete });
 
-    tl.fromTo(bg, { scale: 1.06, y: 8 }, { scale: 1, y: 0, duration: 9, ease: 'power1.inOut' }, at(0));
+      tl.fromTo(bg, { scale: 1.06, y: 8 }, { scale: 1, y: 0, duration: 9, ease: 'power1.inOut' }, at(0));
 
-    if (image) {
-      tl.fromTo(
-        image,
-        { opacity: 0, y: 12, scale: media.kenBurns ? 1.15 : 1.05, filter: media.blurTransitions ? 'blur(6px)' : 'none' },
-        { opacity: 0.55, y: 0, scale: 1, filter: 'blur(0px)', duration: 1.2, ease: 'power2.out' },
-        at(0.3),
-      );
-      if (media.kenBurns) {
-        tl.to(image, { scale: 1.06, xPercent: motion.parallaxIntensity * 4, duration: 3.8, ease: 'sine.inOut', yoyo: true, repeat: 1 }, at(1.5));
+      if (image) {
+        tl.fromTo(
+          image,
+          { opacity: 0, y: 12, scale: media.kenBurns ? 1.15 : 1.05, filter: media.blurTransitions ? 'blur(6px)' : 'none' },
+          { opacity: 0.55, y: 0, scale: 1, filter: 'blur(0px)', duration: 1.2, ease: 'power2.out' },
+          at(0.3),
+        );
+        if (media.kenBurns) {
+          tl.to(image, { scale: 1.06, xPercent: motion.parallaxIntensity * 4, duration: 3.8, ease: 'sine.inOut', yoyo: true, repeat: 1 }, at(1.5));
+        }
       }
-    }
 
-    tl.fromTo(dot, { opacity: 0, scale: 0, filter: media.blurTransitions ? 'blur(6px)' : 'none' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.8, ease: 'power3.out' }, at(0.4));
-    tl.fromTo(rule, { opacity: 0, scaleX: 0 }, { opacity: 0.3, scaleX: 1, duration: 1.0, ease: 'power2.inOut' }, at(0.7));
+      tl.fromTo(dot, { opacity: 0, scale: 0, filter: media.blurTransitions ? 'blur(6px)' : 'none' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.8, ease: 'power3.out' }, at(0.4));
+      tl.fromTo(rule, { opacity: 0, scaleX: 0 }, { opacity: 0.3, scaleX: 1, duration: 1.0, ease: 'power2.inOut' }, at(0.7));
 
-    if (headingWords.length > 0) {
-      tl.to(heading, { opacity: 1, duration: 0.01 }, at(1.0));
-      tl.to(headingWords, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', stagger: 0.12 }, at(1.0));
-      applyPresetPulse(tl, headingWords, config, at(1.25));
-    } else {
-      tl.fromTo(heading, { opacity: 0, x: -30, filter: media.blurTransitions ? 'blur(4px)' : 'none' }, { opacity: 1, x: 0, filter: 'blur(0px)', duration: 1.0, ease: 'power3.out' }, at(1.0));
-      applyPresetPulse(tl, heading, config, at(1.2));
-    }
+      if (headingWords.length > 0) {
+        tl.to(heading, { opacity: 1, duration: 0.01 }, at(1.0));
+        tl.to(headingWords, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', stagger: 0.12 }, at(1.0));
+        applyPresetPulse(tl, headingWords, config, at(1.25));
+      } else {
+        tl.fromTo(heading, { opacity: 0, x: -30, filter: media.blurTransitions ? 'blur(4px)' : 'none' }, { opacity: 1, x: 0, filter: 'blur(0px)', duration: 1.0, ease: 'power3.out' }, at(1.0));
+        applyPresetPulse(tl, heading, config, at(1.2));
+      }
 
-    tl.fromTo(sub, { opacity: 0, x: 20, filter: media.blurTransitions ? 'blur(3px)' : 'none' }, { opacity: 0.6, x: 0, filter: 'blur(0px)', duration: 0.9, ease: 'power2.out' }, at(1.5));
-    tl.fromTo(caption, { opacity: 0, y: 6, clipPath: 'inset(0 100% 0 0)' }, { opacity: 0.45, y: 0, clipPath: 'inset(0 0% 0 0)', duration: 0.8, ease: 'power2.out' }, at(2.0));
+      tl.fromTo(sub, { opacity: 0, x: 20, filter: media.blurTransitions ? 'blur(3px)' : 'none' }, { opacity: 0.6, x: 0, filter: 'blur(0px)', duration: 0.9, ease: 'power2.out' }, at(1.5));
+      tl.fromTo(caption, { opacity: 0, y: 6, clipPath: 'inset(0 100% 0 0)' }, { opacity: 0.45, y: 0, clipPath: 'inset(0 0% 0 0)', duration: 0.8, ease: 'power2.out' }, at(2.0));
 
-    tl.to(stage, {
-      rotateY: motion.enable3D ? motion.depthIntensity * 4 : 0,
-      duration: 2.5,
-      ease: 'sine.inOut',
-      yoyo: true,
-      repeat: 1,
-    }, at(2.1));
+      tl.to(stage, {
+        rotateY: motion.enable3D ? motion.depthIntensity * 4 : 0,
+        duration: 2.5,
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: 1,
+      }, at(2.1));
 
-    tl.to({}, { duration: 2.6 * Math.max(0.8, motion.sceneTiming) });
+      tl.to({}, { duration: 2.6 * Math.max(0.8, motion.sceneTiming) });
 
-    const exitStart = '>';
-    tl.to(caption, { opacity: 0, y: -4, duration: 0.6, ease: 'power2.in' }, exitStart);
-    tl.to(sub, { opacity: 0, x: -12, filter: media.blurTransitions ? 'blur(2px)' : 'none', duration: 0.7, ease: 'power2.in' }, '>-0.4');
-    if (headingWords.length > 0) {
-      tl.to(headingWords, { opacity: 0, y: -8, filter: media.blurTransitions ? 'blur(3px)' : 'none', duration: 0.6, ease: 'power2.in', stagger: { amount: 0.25, from: 'end' } }, '>-0.5');
-    } else {
-      tl.to(heading, { opacity: 0, x: 20, filter: media.blurTransitions ? 'blur(3px)' : 'none', duration: 0.7, ease: 'power2.in' }, '>-0.5');
-    }
-    tl.to(rule, { opacity: 0, scaleX: 0, duration: 0.5, ease: 'power2.in' }, '>-0.3');
-    tl.to(dot, { opacity: 0, scale: 0.5, filter: media.blurTransitions ? 'blur(4px)' : 'none', duration: 0.5, ease: 'power2.in' }, '>-0.3');
-    if (image) tl.to(image, { opacity: 0, y: -8, duration: 0.6, ease: 'power2.in' }, '>-0.4');
+      const exitStart = '>';
+      tl.to(caption, { opacity: 0, y: -4, duration: 0.6, ease: 'power2.in' }, exitStart);
+      tl.to(sub, { opacity: 0, x: -12, filter: media.blurTransitions ? 'blur(2px)' : 'none', duration: 0.7, ease: 'power2.in' }, '>-0.4');
+      if (headingWords.length > 0) {
+        tl.to(headingWords, { opacity: 0, y: -8, filter: media.blurTransitions ? 'blur(3px)' : 'none', duration: 0.6, ease: 'power2.in', stagger: { amount: 0.25, from: 'end' } }, '>-0.5');
+      } else {
+        tl.to(heading, { opacity: 0, x: 20, filter: media.blurTransitions ? 'blur(3px)' : 'none', duration: 0.7, ease: 'power2.in' }, '>-0.5');
+      }
+      tl.to(rule, { opacity: 0, scaleX: 0, duration: 0.5, ease: 'power2.in' }, '>-0.3');
+      tl.to(dot, { opacity: 0, scale: 0.5, filter: media.blurTransitions ? 'blur(4px)' : 'none', duration: 0.5, ease: 'power2.in' }, '>-0.3');
+      if (image) tl.to(image, { opacity: 0, y: -8, duration: 0.6, ease: 'power2.in' }, '>-0.4');
 
-    applyTimelineControls(tl, config);
+      applyTimelineControls(tl, config);
 
-    tlRef.current = tl;
-    onTimelineReady?.(tl);
-    return () => {
-      tl.kill();
-      if (tlRef.current === tl) tlRef.current = null;
+      tlRef.current = tl;
+      onTimelineReady?.(tl);
+      return () => {
+        tl.kill();
+        if (tlRef.current === tl) tlRef.current = null;
+        onTimelineReady?.(null);
+      };
+    } catch (error) {
+      console.warn('Template animation failed', error);
+      if (tlRef.current) {
+        tlRef.current.kill();
+        tlRef.current = null;
+      }
       onTimelineReady?.(null);
-    };
+      return;
+    }
   }, [config, onComplete, onTimelineReady, motion.enable3D, motion.depthIntensity, motion.parallaxIntensity, motion.sceneTiming, media.blurTransitions, media.kenBurns, at]);
 
   useEffect(() => {

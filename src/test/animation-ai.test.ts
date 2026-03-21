@@ -56,7 +56,9 @@ describe('animation AI helpers', () => {
       vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          response: '{"heading":"Luxury Candle","subheading":"Warm tones and cinematic feel","style":{"motion":"slow dramatic","textReveal":"stagger blur","camera":"zoom in","depth":0.5,"parallax":0.3},"colors":{"primary":"#C99249","background":"warm luxury"},"timing":{"intro":2,"main":5,"outro":2}}',
+          message: {
+            content: '{"heading":"Luxury Candle","subheading":"Warm tones and cinematic feel","style":{"motion":"slow dramatic","textReveal":"stagger blur","camera":"zoom in","depth":0.5,"parallax":0.3},"colors":{"primary":"#C99249","background":"warm luxury"},"timing":{"intro":2,"main":5,"outro":2}}',
+          },
         }),
       }),
     );

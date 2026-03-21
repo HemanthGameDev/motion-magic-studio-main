@@ -35,13 +35,14 @@ const KineticTypographyBurst = ({ config, isPlaying, onComplete, onTimelineReady
     const caption = captionRef.current;
     const charNodes = charsRef.current.filter((node): node is HTMLSpanElement => Boolean(node));
 
-    if (!stage || !bg || !heading || !sub || !caption || charNodes.length === 0) {
-      console.warn('Missing GSAP target');
+    if (!gsap || !stage || !bg || !heading || !sub || !caption || charNodes.length === 0) {
+      console.warn('GSAP or element missing');
       onTimelineReady?.(null);
       return;
     }
 
-    if (tlRef.current) tlRef.current.kill();
+    try {
+      if (tlRef.current) tlRef.current.kill();
 
     gsap.set([heading, sub, caption], { opacity: 0 });
     gsap.set(charNodes, {
@@ -185,6 +186,15 @@ const KineticTypographyBurst = ({ config, isPlaying, onComplete, onTimelineReady
       if (tlRef.current === tl) tlRef.current = null;
       onTimelineReady?.(null);
     };
+    } catch (error) {
+      console.warn('Template animation failed', error);
+      if (tlRef.current) {
+        tlRef.current.kill();
+        tlRef.current = null;
+      }
+      onTimelineReady?.(null);
+      return;
+    }
   }, [config, onComplete, onTimelineReady, motion.parallaxIntensity, motion.sceneTiming, media.blurTransitions, media.kenBurns, at]);
 
   useEffect(() => {

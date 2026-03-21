@@ -36,13 +36,14 @@ const ProductShowcase = ({ config, isPlaying, onComplete, onTimelineReady }: Tem
     const caption = captionRef.current;
     const price = priceRef.current;
 
-    if (!stage || !bg || !card || !glow || !heading || !sub || !caption || !price) {
-      console.warn('Missing GSAP target');
+    if (!gsap || !stage || !bg || !card || !glow || !heading || !sub || !caption || !price) {
+      console.warn('GSAP or element missing');
       onTimelineReady?.(null);
       return;
     }
 
-    if (tlRef.current) tlRef.current.kill();
+    try {
+      if (tlRef.current) tlRef.current.kill();
 
     gsap.set([card, heading, sub, caption, price, glow], { opacity: 0 });
     if (image) gsap.set(image, { opacity: 0, scale: media.kenBurns ? 1.14 : 1.05 });
@@ -94,6 +95,15 @@ const ProductShowcase = ({ config, isPlaying, onComplete, onTimelineReady }: Tem
       if (tlRef.current === tl) tlRef.current = null;
       onTimelineReady?.(null);
     };
+    } catch (error) {
+      console.warn('Template animation failed', error);
+      if (tlRef.current) {
+        tlRef.current.kill();
+        tlRef.current = null;
+      }
+      onTimelineReady?.(null);
+      return;
+    }
   }, [config, onComplete, onTimelineReady, motion.animationPreset, motion.parallaxIntensity, motion.sceneTiming, media.blurTransitions, media.kenBurns, at]);
 
   useEffect(() => {

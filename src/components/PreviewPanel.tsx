@@ -128,6 +128,7 @@ const PreviewPanel = ({ config }: Props) => {
           Restart
         </button>
         <ExportButton
+          config={config}
           prepareExportStage={handlePrepareExportStage}
           width={renderSize.width}
           height={renderSize.height}

@@ -41,13 +41,14 @@ const LuxuryTemplate = ({ config, isPlaying, onComplete, onTimelineReady }: Temp
     const image = imageRef.current;
     const headingChars = headingCharsRef.current.filter((node): node is HTMLSpanElement => Boolean(node));
 
-    if (!bg || !heading || !sub || !caption || !line || !ornament || !vignette || !stage) {
-      console.warn('Missing GSAP target');
+    if (!gsap || !bg || !heading || !sub || !caption || !line || !ornament || !vignette || !stage) {
+      console.warn('GSAP or element missing');
       onTimelineReady?.(null);
       return;
     }
 
-    if (tlRef.current) tlRef.current.kill();
+    try {
+      if (tlRef.current) tlRef.current.kill();
 
     const targets: gsap.TweenTarget[] = [heading, sub, caption, line, ornament, vignette];
     if (image) targets.push(image);
@@ -223,6 +224,15 @@ const LuxuryTemplate = ({ config, isPlaying, onComplete, onTimelineReady }: Temp
       if (tlRef.current === tl) tlRef.current = null;
       onTimelineReady?.(null);
     };
+    } catch (error) {
+      console.warn('Template animation failed', error);
+      if (tlRef.current) {
+        tlRef.current.kill();
+        tlRef.current = null;
+      }
+      onTimelineReady?.(null);
+      return;
+    }
   }, [config, onComplete, onTimelineReady, motion.enable3D, motion.depthIntensity, motion.parallaxIntensity, motion.sceneTiming, media.blurTransitions, media.kenBurns, at]);
 
   useEffect(() => {

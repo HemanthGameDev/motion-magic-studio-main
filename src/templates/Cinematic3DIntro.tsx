@@ -41,13 +41,14 @@ const Cinematic3DIntro = ({ config, isPlaying, onComplete, onTimelineReady }: Te
     const image = imageRef.current;
     const headingChars = headingCharsRef.current.filter((node): node is HTMLSpanElement => Boolean(node));
 
-    if (!stage || !bg || !noise || !heading || !sub || !caption || !frame || !glow) {
-      console.warn('Missing GSAP target');
+    if (!gsap || !stage || !bg || !noise || !heading || !sub || !caption || !frame || !glow) {
+      console.warn('GSAP or element missing');
       onTimelineReady?.(null);
       return;
     }
 
-    if (tlRef.current) tlRef.current.kill();
+    try {
+      if (tlRef.current) tlRef.current.kill();
 
     gsap.set([heading, sub, caption, frame, glow, noise], { opacity: 0 });
     if (headingChars.length > 0) {
@@ -141,6 +142,15 @@ const Cinematic3DIntro = ({ config, isPlaying, onComplete, onTimelineReady }: Te
       if (tlRef.current === tl) tlRef.current = null;
       onTimelineReady?.(null);
     };
+    } catch (error) {
+      console.warn('Template animation failed', error);
+      if (tlRef.current) {
+        tlRef.current.kill();
+        tlRef.current = null;
+      }
+      onTimelineReady?.(null);
+      return;
+    }
   }, [config, onComplete, onTimelineReady, motion.animationPreset, motion.depthIntensity, motion.enable3D, motion.parallaxIntensity, motion.sceneTiming, media.blurTransitions, media.kenBurns, at]);
 
   useEffect(() => {

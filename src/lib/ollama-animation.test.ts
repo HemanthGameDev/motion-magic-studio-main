@@ -35,7 +35,9 @@ describe('generateAnimationConfig', () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        response: '{"heading":"Luxury Candle","subheading":"Warm tones","style":{"motion":"slow dramatic"}}',
+        message: {
+          content: '{"heading":"Luxury Candle","subheading":"Warm tones","style":{"motion":"slow dramatic"}}',
+        },
       }),
     });
 
@@ -45,7 +47,10 @@ describe('generateAnimationConfig', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, options] = fetchMock.mock.calls[0];
-    expect(JSON.parse(String(options?.body)).model).toBe('qwen3.5:9b');
+    const body = JSON.parse(String(options?.body));
+    expect(body.model).toBe('qwen3.5:9b');
+    expect(body.messages[0].role).toBe('system');
+    expect(body.messages[1].role).toBe('user');
   });
 
   it('normalizes cinematic Ollama JSON and defaults the template safely', async () => {
@@ -54,7 +59,9 @@ describe('generateAnimationConfig', () => {
       vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          response: '{"heading":"Luxury Candle","subheading":"Warm tones and slow fade","style":{"motion":"slow dramatic","textReveal":"stagger blur","camera":"zoom in","depth":0.5,"parallax":0.3},"colors":{"primary":"#C99249","background":"warm luxury"},"timing":{"intro":2,"main":5,"outro":2}}',
+          message: {
+            content: '{"heading":"Luxury Candle","subheading":"Warm tones and slow fade","style":{"motion":"slow dramatic","textReveal":"stagger blur","camera":"zoom in","depth":0.5,"parallax":0.3},"colors":{"primary":"#C99249","background":"warm luxury"},"timing":{"intro":2,"main":5,"outro":2}}',
+          },
         }),
       }),
     );
