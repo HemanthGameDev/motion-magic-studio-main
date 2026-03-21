@@ -5,7 +5,7 @@ import { waitForTimeline } from './timeline-ready';
 
 export type ExportStatus = 'preparing' | 'recording' | 'processing';
 export type ExportMode = 'auto' | 'fast' | 'smart' | 'fallback' | 'capture-stream' | 'frame-by-frame';
-export type ExportRuntimeMode = 'fast-stream' | 'smart-stream' | 'frame-by-frame' | 'png-sequence';
+export type ExportRuntimeMode = 'fast-stream' | 'smart-stream' | 'frame-by-frame' | 'png-sequence' | 'server-mp4';
 export type ExportQuality = 'high' | 'medium' | 'low';
 
 export interface ExportOptions {
