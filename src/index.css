@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 16% 6%;
+    --foreground: 40 20% 92%;
+
+    --card: 220 14% 10%;
+    --card-foreground: 40 20% 92%;
+
+    --popover: 220 14% 10%;
+    --popover-foreground: 40 20% 92%;
+
+    --primary: 36 60% 55%;
+    --primary-foreground: 220 16% 6%;
+
+    --secondary: 220 12% 16%;
+    --secondary-foreground: 40 15% 80%;
+
+    --muted: 220 10% 14%;
+    --muted-foreground: 220 8% 50%;
+
+    --accent: 36 50% 45%;
+    --accent-foreground: 40 20% 95%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 10% 18%;
+    --input: 220 10% 18%;
+    --ring: 36 60% 55%;
+
+    --radius: 0.625rem;
+
+    /* Custom tokens */
+    --surface-raised: 220 14% 12%;
+    --surface-overlay: 220 14% 8%;
+    --glow-primary: 36 80% 50%;
+    --text-dim: 220 8% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  .surface-raised {
+    background-color: hsl(var(--surface-raised));
+  }
+  .surface-overlay {
+    background-color: hsl(var(--surface-overlay));
+  }
+  .text-dim {
+    color: hsl(var(--text-dim));
+  }
+  .glow-ring {
+    box-shadow: 0 0 20px -4px hsl(var(--glow-primary) / 0.3);
+  }
+  .preview-frame {
+    background: linear-gradient(145deg, hsl(220 16% 4%), hsl(220 14% 8%));
+    box-shadow:
+      0 1px 0 0 hsl(220 10% 20% / 0.4),
+      0 8px 32px -8px hsl(0 0% 0% / 0.6),
+      inset 0 1px 0 0 hsl(220 10% 16% / 0.3);
+  }
+}
