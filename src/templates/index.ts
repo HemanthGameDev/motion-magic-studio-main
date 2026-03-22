@@ -42,6 +42,50 @@ const GuardedProductShowcase = withTemplateGuard(ProductShowcase, 'product-showc
 const GuardedModernTechReel = withTemplateGuard(ModernTechReel, 'modern-tech');
 const GuardedKineticTypographyBurst = withTemplateGuard(KineticTypographyBurst, 'kinetic-burst');
 
+const TEMPLATE_COMPONENT_MAP: Record<string, ComponentType<TemplateProps>> = {
+  luxury: GuardedLuxuryTemplate,
+  luxurytemplate: GuardedLuxuryTemplate,
+  bold: GuardedBoldTemplate,
+  boldtemplate: GuardedBoldTemplate,
+  minimal: MinimalTemplate,
+  minimaltemplate: MinimalTemplate,
+  cinematic3d: GuardedCinematic3DIntro,
+  cinematic_intro: GuardedCinematic3DIntro,
+  cinematic3dintro: GuardedCinematic3DIntro,
+  product: GuardedProductShowcase,
+  product_showcase: GuardedProductShowcase,
+  productshowcase: GuardedProductShowcase,
+  'product-showcase': GuardedProductShowcase,
+  modern_tech: GuardedModernTechReel,
+  'modern-tech': GuardedModernTechReel,
+  kinetic_burst: GuardedKineticTypographyBurst,
+  'kinetic-burst': GuardedKineticTypographyBurst,
+};
+
+const TEMPLATE_DEBUG_NAMES: Record<string, string> = {
+  luxury: 'LuxuryTemplate',
+  luxurytemplate: 'LuxuryTemplate',
+  bold: 'BoldTemplate',
+  boldtemplate: 'BoldTemplate',
+  minimal: 'MinimalTemplate',
+  minimaltemplate: 'MinimalTemplate',
+  cinematic3d: 'Cinematic3DIntro',
+  cinematic_intro: 'Cinematic3DIntro',
+  cinematic3dintro: 'Cinematic3DIntro',
+  product: 'ProductShowcase',
+  product_showcase: 'ProductShowcase',
+  productshowcase: 'ProductShowcase',
+  'product-showcase': 'ProductShowcase',
+  modern_tech: 'ModernTechReel',
+  'modern-tech': 'ModernTechReel',
+  kinetic_burst: 'KineticTypographyBurst',
+  'kinetic-burst': 'KineticTypographyBurst',
+};
+
+function normalizeTemplateKey(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_');
+}
+
 export const TEMPLATE_REGISTRY: Record<TemplateStyle, TemplateDefinition> = {
   luxury: {
     id: 'luxury',
@@ -104,8 +148,14 @@ export const TEMPLATES: Record<TemplateStyle, ComponentType<TemplateProps>> = {
   'kinetic-burst': GuardedKineticTypographyBurst,
 };
 
-export function renderTemplate(config: AnimationConfig): ComponentType<TemplateProps> {
-  return TEMPLATE_REGISTRY[config.template]?.component || GuardedLuxuryTemplate;
+export function renderTemplate(config: Pick<AnimationConfig, 'template'>): ComponentType<TemplateProps> {
+  const templateKey = typeof config.template === 'string' ? normalizeTemplateKey(config.template) : 'minimal';
+  return TEMPLATE_COMPONENT_MAP[templateKey] || MinimalTemplate;
+}
+
+export function resolveTemplateDebugName(template: string): string {
+  const templateKey = normalizeTemplateKey(template);
+  return TEMPLATE_DEBUG_NAMES[templateKey] || 'MinimalTemplate';
 }
 
 export const TEMPLATE_OPTIONS = Object.values(TEMPLATE_REGISTRY).map((entry) => ({
