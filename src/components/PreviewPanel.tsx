@@ -1,11 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import type gsap from 'gsap';
+import { useState, useCallback } from 'react';
 import { Play, RotateCcw, Pause } from 'lucide-react';
 import { renderTemplate } from '@/templates';
 import type { AnimationConfig } from '@/lib/types';
 import { getRenderSize } from '@/lib/types';
-import { prepareExportStage } from '@/lib/export-stage';
-import { waitForTimeline } from '@/lib/timeline-ready';
 import ExportButton from './ExportButton';
 
 interface Props {
@@ -16,9 +13,6 @@ const PreviewPanel = ({ config }: Props) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [key, setKey] = useState(0);
   const [exportBusy, setExportBusy] = useState(false);
-  const [isAnimationReady, setIsAnimationReady] = useState(false);
-  const previewRef = useRef<HTMLDivElement>(null);
-  const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
   const TemplateComponent = renderTemplate(config);
 
@@ -29,41 +23,15 @@ const PreviewPanel = ({ config }: Props) => {
 
   const handleRestart = useCallback(() => {
     if (exportBusy) return;
-    setIsAnimationReady(false);
     setKey((k) => k + 1);
     setIsPlaying(true);
   }, [exportBusy]);
-
-  const handleTimelineReady = useCallback((timeline: gsap.core.Timeline | null) => {
-    timelineRef.current = timeline;
-    setIsAnimationReady(Boolean(timeline && timeline.duration() > 0 && Number.isFinite(timeline.duration())));
-  }, []);
-
-  const waitForPreviewTimeline = useCallback(async () => {
-    return waitForTimeline(() => timelineRef.current, {
-      maxRetries: 20,
-      delayMs: 100,
-      errorMessage: 'Animation failed to initialize',
-    });
-  }, []);
 
   const handleTemplateComplete = useCallback(() => {
     setIsPlaying(false);
   }, []);
 
   const renderSize = getRenderSize(config);
-  const handlePrepareExportStage = useCallback(() => {
-    return prepareExportStage({
-      config,
-      width: renderSize.width,
-      height: renderSize.height,
-    });
-  }, [config, renderSize.width, renderSize.height]);
-
-  useEffect(() => {
-    setIsAnimationReady(false);
-  }, [config.template, config.text.heading, config.text.subheading, config.text.caption, key]);
-
   const viewportMaxWidth = 500;
   const viewportMaxHeight = 560;
   const scale = Math.min(viewportMaxWidth / renderSize.width, viewportMaxHeight / renderSize.height);
@@ -80,7 +48,6 @@ const PreviewPanel = ({ config }: Props) => {
         }}
       >
         <div
-          ref={previewRef}
           className="absolute top-0 left-0 origin-top-left"
           style={{
             width: renderSize.width,
@@ -94,7 +61,6 @@ const PreviewPanel = ({ config }: Props) => {
             config={config}
             isPlaying={isPlaying}
             onComplete={handleTemplateComplete}
-            onTimelineReady={handleTimelineReady}
           />
 
           {!isPlaying && !exportBusy && (
@@ -129,17 +95,12 @@ const PreviewPanel = ({ config }: Props) => {
         </button>
         <ExportButton
           config={config}
-          prepareExportStage={handlePrepareExportStage}
-          width={renderSize.width}
-          height={renderSize.height}
-          isAnimationReady={isAnimationReady}
-          waitForPreviewTimeline={waitForPreviewTimeline}
           onExportBusyChange={setExportBusy}
         />
       </div>
 
       <span className="text-xs text-muted-foreground tracking-wide">
-        {renderSize.width} x {renderSize.height} - 30fps
+        {renderSize.width} x {renderSize.height} - Preview canvas
       </span>
     </div>
   );

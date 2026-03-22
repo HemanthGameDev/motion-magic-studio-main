@@ -17,7 +17,7 @@ import { Sparkles, Clapperboard, Type, ImageIcon, Gauge, Expand, TimerReset, Loa
 import { toast } from '@/components/ui/sonner';
 import PresetSelector from './PresetSelector';
 import ImageUpload from './ImageUpload';
-import { TEMPLATE_OPTIONS } from '@/templates';
+import { TEMPLATE_OPTIONS, resolveTemplateDebugName } from '@/templates';
 
 interface Props {
   config: AnimationConfig;
@@ -43,6 +43,7 @@ const AI_FALLBACK_TEMPLATE: TemplateStyle = 'minimal';
 const ControlPanel = ({ config, onChange }: Props) => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastAiConfig, setLastAiConfig] = useState<Record<string, unknown> | null>(null);
   const size = getRenderSize(config);
   const motion = getMotionConfig(config);
   const media = getMediaEnhancement(config);
@@ -146,6 +147,10 @@ const ControlPanel = ({ config, onChange }: Props) => {
           : undefined,
       });
 
+      console.log('AI CONFIG:', aiConfig);
+      console.log('Using template:', nextConfig.template);
+      setLastAiConfig(aiConfig as Record<string, unknown>);
+
       onChange({
         ...nextConfig,
         image: config.image,
@@ -171,6 +176,16 @@ const ControlPanel = ({ config, onChange }: Props) => {
               height: config.size.height,
             }
           : undefined,
+      });
+
+      console.log('AI CONFIG:', {
+        error: error instanceof Error ? error.message : 'Unknown AI error',
+        fallbackTemplate: fallbackConfig.template,
+      });
+      console.log('Using template:', fallbackConfig.template);
+      setLastAiConfig({
+        error: error instanceof Error ? error.message : 'Unknown AI error',
+        fallbackTemplate: fallbackConfig.template,
       });
 
       onChange({
@@ -470,6 +485,25 @@ const ControlPanel = ({ config, onChange }: Props) => {
               <span className="text-[9px] text-muted-foreground">End</span>
             </div>
           )}
+        </div>
+      </section>
+
+      <section>
+        <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+          <Sparkles className="w-3.5 h-3.5" /> Debug
+        </label>
+        <div className="debug-panel surface-raised rounded-lg p-3 flex flex-col gap-2">
+          <p className="text-[10px] text-muted-foreground">
+            Using template: <span className="font-mono text-foreground">{config.template}</span> ({resolveTemplateDebugName(config.template)})
+          </p>
+          <pre className="max-h-64 overflow-auto rounded-md bg-secondary p-3 text-[10px] leading-relaxed text-foreground whitespace-pre-wrap break-all">
+            {JSON.stringify({
+              currentTemplate: config.template,
+              currentTemplateComponent: resolveTemplateDebugName(config.template),
+              lastAiConfig,
+              currentConfig: config,
+            }, null, 2)}
+          </pre>
         </div>
       </section>
     </div>
