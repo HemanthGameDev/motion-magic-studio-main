@@ -5,9 +5,7 @@ type AiTemplate =
   | 'luxury'
   | 'bold'
   | 'minimal'
-  | 'modern_tech'
-  | 'product_showcase'
-  | 'kinetic_burst';
+  | 'product';
 
 type AiMotionStyle = 'slow_dramatic' | 'energetic' | 'editorial_clean' | 'tech_precision';
 type AiTextReveal = 'stagger_blur' | 'stagger_rise' | 'clean_fade' | 'impact_pop';
@@ -23,7 +21,7 @@ interface OllamaChatResponse {
 
 const OLLAMA_ENDPOINT = 'http://localhost:11434/api/chat';
 const DEFAULT_MODEL = 'qwen3.5:9b';
-const VALID_TEMPLATES = new Set<AiTemplate>(['cinematic_intro', 'luxury', 'bold', 'minimal', 'modern_tech', 'product_showcase', 'kinetic_burst']);
+const VALID_TEMPLATES = new Set<AiTemplate>(['cinematic_intro', 'luxury', 'bold', 'minimal', 'product']);
 const VALID_MOTION_STYLES = new Set<AiMotionStyle>(['slow_dramatic', 'energetic', 'editorial_clean', 'tech_precision']);
 const VALID_TEXT_REVEALS = new Set<AiTextReveal>(['stagger_blur', 'stagger_rise', 'clean_fade', 'impact_pop']);
 const VALID_CAMERAS = new Set<AiCamera>(['zoom_in', 'drift_left', 'float', 'static']);
@@ -58,9 +56,7 @@ function normalizeTemplate(value: unknown): AiTemplate {
   }
 
   if (normalized.includes('cinematic')) return 'cinematic_intro';
-  if (normalized.includes('tech')) return 'modern_tech';
-  if (normalized.includes('product')) return 'product_showcase';
-  if (normalized.includes('kinetic')) return 'kinetic_burst';
+  if (normalized.includes('product')) return 'product';
   if (normalized.includes('lux')) return 'luxury';
   if (normalized.includes('bold')) return 'bold';
   return 'minimal';
@@ -221,13 +217,13 @@ function normalizeGeneratedConfig(raw: unknown): JsonInput {
 
 function buildPrompt(prompt: string): string {
   return [
-    'Convert this into animation JSON:',
+    'Convert this prompt into cinematic animation JSON.',
     '',
     prompt,
     '',
-    'Return ONLY:',
+    'Return ONLY valid JSON with this exact shape:',
     '{',
-    '  "template": "cinematic_intro" | "luxury" | "bold" | "minimal" | "modern_tech" | "product_showcase" | "kinetic_burst",',
+    '  "template": "luxury" | "bold" | "minimal" | "cinematic_intro" | "product",',
     '  "heading": "string",',
     '  "subheading": "string",',
     '  "style": {',
@@ -247,6 +243,8 @@ function buildPrompt(prompt: string): string {
     '    "outro": number',
     '  }',
     '}',
+    '',
+    'Keep it clean and valid JSON.',
   ].join('\n');
 }
 
@@ -257,9 +255,9 @@ export async function generateAnimationConfig(prompt: string): Promise<JsonInput
   }
 
   try {
-    const MODEL = getConfiguredModel();
-    console.log('Using model:', MODEL);
-    console.log('🚀 Sending prompt to AI:', trimmedPrompt);
+    const model = getConfiguredModel();
+    console.log('Using model:', model);
+    console.log('Sending prompt to AI:', trimmedPrompt);
 
     const response = await fetch(OLLAMA_ENDPOINT, {
       method: 'POST',
@@ -267,11 +265,38 @@ export async function generateAnimationConfig(prompt: string): Promise<JsonInput
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         messages: [
           {
             role: 'system',
-            content: 'You are a motion graphics generator. Return only JSON.',
+            content: [
+              'You are a cinematic motion designer.',
+              '',
+              'Return ONLY JSON:',
+              '{',
+              '  "template": "luxury" | "bold" | "minimal" | "cinematic_intro" | "product",',
+              '  "heading": "short text",',
+              '  "subheading": "optional short text",',
+              '  "style": {',
+              '    "motion": "slow_dramatic" | "energetic" | "editorial_clean" | "tech_precision",',
+              '    "textReveal": "stagger_blur" | "stagger_rise" | "clean_fade" | "impact_pop",',
+              '    "camera": "zoom_in" | "drift_left" | "float" | "static",',
+              '    "depth": 0-1,',
+              '    "parallax": 0-1',
+              '  },',
+              '  "colors": {',
+              '    "primary": "#RRGGBB",',
+              '    "background": "dark_gradient" | "warm_luxury" | "neon_gradient" | "grayscale"',
+              '  },',
+              '  "timing": {',
+              '    "intro": number,',
+              '    "main": number,',
+              '    "outro": number',
+              '  }',
+              '}',
+              '',
+              'Keep it clean and valid JSON.',
+            ].join('\n'),
           },
           {
             role: 'user',
@@ -282,7 +307,7 @@ export async function generateAnimationConfig(prompt: string): Promise<JsonInput
       }),
     });
 
-    console.log('📡 Response status:', response.status);
+    console.log('Response status:', response.status);
 
     if (!response.ok) {
       console.warn('AI failed, using fallback template');
@@ -290,22 +315,22 @@ export async function generateAnimationConfig(prompt: string): Promise<JsonInput
     }
 
     const data = await response.json() as OllamaChatResponse;
-    console.log('🧠 Raw AI response:', data);
+    console.log('Raw AI response:', data);
 
     const output = data.message?.content || data.response;
-    console.log('📝 AI text output:', output);
+    console.log('AI text output:', output);
 
     if (typeof output !== 'string') {
       throw new Error('Ollama did not return a generated response');
     }
 
-    console.log('🔍 Parsing JSON...');
+    console.log('Parsing JSON...');
     const parsed = JSON.parse(extractJsonObject(output)) as unknown;
     const config = normalizeGeneratedConfig(parsed);
-    console.log('✅ Parsed config:', config);
+    console.log('Parsed config:', config);
     return config;
   } catch (error) {
-    console.error('❌ AI ERROR:', error);
+    console.error('AI ERROR:', error);
     throw error;
   }
 }

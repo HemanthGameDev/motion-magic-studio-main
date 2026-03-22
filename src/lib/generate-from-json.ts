@@ -92,8 +92,14 @@ type ColorMood = 'luxury-dark' | 'tech-neon' | 'minimal-gray' | 'bold-impact';
 const TEMPLATE_ALIASES: Record<string, TemplateStyle> = {
   cinematic_intro: 'cinematic3d',
   'cinematic-intro': 'cinematic3d',
+  cinematic3dintro: 'cinematic3d',
   cinematic3d: 'cinematic3d',
+  luxurytemplate: 'luxury',
+  boldtemplate: 'bold',
+  minimaltemplate: 'minimal',
+  product: 'product-showcase',
   product_showcase: 'product-showcase',
+  productshowcase: 'product-showcase',
   modern_tech: 'modern-tech',
   kinetic_burst: 'kinetic-burst',
 };
